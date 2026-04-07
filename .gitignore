@@ -1,8 +1,8 @@
 # Environment (contains credentials)
 .env
 
-# SQLite cache
-data/
+# SQLite cache (root-level only)
+/data/
 
 # Dependencies
 node_modules/
