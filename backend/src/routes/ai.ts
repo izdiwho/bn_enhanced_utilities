@@ -5,11 +5,15 @@
  * Body: { monthlyKwh: number, applianceList?: string[] }
  * Returns: { appliancesJson: object, rawText: string }
  *
- * Calls OpenRouter with a structured prompt.
- * OPENROUTER_API_KEY must be set in the environment to enable this endpoint.
- * OPENROUTER_MODEL controls which model is used (default: qwen/qwen3-235b-a22b-2507).
+ * Compatible with any OpenAI-compatible API (OpenRouter, Ollama, Together AI,
+ * Groq, Azure OpenAI, etc). Configure via environment variables:
  *
- * No session token required — gated on OPENROUTER_API_KEY presence only.
+ *   AI_API_KEY   — API key (also accepts OPENROUTER_API_KEY for backward compat)
+ *   AI_API_URL   — Base URL (default: https://openrouter.ai/api/v1)
+ *   AI_MODEL     — Model name (also accepts OPENROUTER_MODEL for backward compat)
+ *
+ * Temperature is fixed at 0 for deterministic structured output.
+ * Seed is set to 42 where supported (harmless if provider ignores it).
  */
 import { Router, Request, Response } from "express";
 import { createHash } from "crypto";
@@ -17,6 +21,20 @@ import { getDb } from "../cache.js";
 import { getPromptHistory, savePromptHistory, deletePromptHistory } from "../cache.js";
 
 export const aiRouter = Router();
+
+// ─── AI provider config ──────────────────────────────────────────────────────
+
+const DEFAULT_API_URL = "https://openrouter.ai/api/v1";
+const DEFAULT_MODEL = "qwen/qwen3-235b-a22b-2507";
+
+// Support both new (AI_*) and legacy (OPENROUTER_*) env var names
+function getAiConfig() {
+  const apiKey = process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY || "";
+  const baseUrl = (process.env.AI_API_URL || DEFAULT_API_URL).replace(/\/+$/, "");
+  const model = process.env.AI_MODEL || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
+  const isOpenRouter = baseUrl.includes("openrouter.ai");
+  return { apiKey, baseUrl, model, isOpenRouter };
+}
 
 // ─── Prompt history endpoints ────────────────────────────────────────────────
 
@@ -30,9 +48,6 @@ aiRouter.delete("/prompt-history/:id", (req: Request, res: Response) => {
   deletePromptHistory(id);
   return res.json({ ok: true });
 });
-
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "qwen/qwen3-235b-a22b-2507";
 
 // ─── AI response cache (SQLite) ──────────────────────────────────────────────
 
@@ -70,12 +85,10 @@ function setCachedEstimate(promptHash: string, appliancesJson: unknown, rawText:
 }
 
 aiRouter.post("/estimate-baseline", async (req: Request, res: Response) => {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const { apiKey, baseUrl, model, isOpenRouter } = getAiConfig();
   if (!apiKey) {
-    return res.status(503).json({ error: "AI service not configured (missing OPENROUTER_API_KEY)" });
+    return res.status(503).json({ error: "AI service not configured (set AI_API_KEY or OPENROUTER_API_KEY)" });
   }
-
-  const model = process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
 
   const { monthlyKwh, applianceList } = req.body as {
     monthlyKwh?: unknown;
@@ -130,19 +143,26 @@ Respond ONLY with a JSON object like:
   }
 
   try {
-    const response = await fetch(OPENROUTER_URL, {
+    // Build headers — OpenRouter-specific headers only sent to OpenRouter
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (apiKey) {
+      headers["Authorization"] = `Bearer ${apiKey}`;
+    }
+    if (isOpenRouter) {
+      headers["HTTP-Referer"] = "https://github.com/izdiwho/bn_enhanced_utilities";
+      headers["X-Title"] = "Enhanced Utilities Tracker";
+    }
+
+    const response = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/myutils",
-        "X-Title": "Enhanced Utilities Tracker",
-      },
+      headers,
       body: JSON.stringify({
         model,
         messages: [{ role: "user", content: prompt }],
-        temperature: 0,
-        seed: 42,
+        temperature: 0,    // deterministic — structured JSON extraction, not creative
+        seed: 42,           // reinforces determinism (ignored by providers that don't support it)
         max_tokens: 1024,
       }),
     });

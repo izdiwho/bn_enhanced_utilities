@@ -17,7 +17,7 @@ authRouter.get("/config", async (_req: Request, res: Response) => {
     return res.json({
       meters: session.meters,
       features: {
-        ai: Boolean(process.env.OPENROUTER_API_KEY),
+        ai: Boolean(process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY),
       },
     });
   } catch (err) {

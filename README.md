@@ -13,7 +13,7 @@ A self-hosted analytics dashboard for Brunei's SmartMeter accounts. Provides dai
 - **Weather correlation** — scatter plot of consumption vs. temperature (quantifies your AC impact)
 - **Anomaly detection** — flags unusual consumption days (>2 standard deviations from your baseline)
 - **Water tank sizing** — estimates tank capacity needed for emergency water storage
-- **AI appliance estimator** — describe your appliances, get a per-appliance cost breakdown (optional, requires OpenRouter API key)
+- **AI appliance estimator** — describe your appliances, get a per-appliance cost breakdown (optional, works with any OpenAI-compatible API)
 - **Electricity + water** — supports both meter types from a single account
 
 ## How it works
@@ -52,13 +52,44 @@ Open [http://localhost:3002](http://localhost:3002). The first load takes 10–1
 | `USMS_IC` | Yes | — | Your IC number (with or without dashes, e.g. `01-234567`) |
 | `USMS_PASSWORD` | Yes | — | Your SmartMeter password |
 | `APP_PIN` | No | — | PIN to protect the dashboard (leave blank for no PIN) |
-| `OPENROUTER_API_KEY` | No | — | Enables AI appliance estimator. Get a free key at [openrouter.ai](https://openrouter.ai) |
-| `OPENROUTER_MODEL` | No | `qwen/qwen3-235b-a22b-2507` | AI model to use via OpenRouter |
+| `AI_API_KEY` | No | — | API key for AI features. Supports any OpenAI-compatible provider |
+| `AI_API_URL` | No | `https://openrouter.ai/api/v1` | Base URL of the AI API |
+| `AI_MODEL` | No | `qwen/qwen3-235b-a22b-2507` | Model name to use |
 | `USMS_BASE_URL` | No | `https://www.usms.com.bn` | Override the portal base URL (for testing) |
 
 When `APP_PIN` is set, the dashboard shows a PIN entry screen before granting access. Rate-limited to 10 attempts per 15 minutes per IP (constant-time comparison to prevent timing attacks). When not set, the dashboard is open.
 
-When `OPENROUTER_API_KEY` is not set, AI features are hidden from the UI automatically.
+When `AI_API_KEY` is not set, AI features are hidden from the UI automatically.
+
+> **Legacy env vars**: `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` still work for backward compatibility. The new `AI_*` vars take priority.
+
+#### AI provider examples
+
+**OpenRouter** (default, [free tier available](https://openrouter.ai)):
+```env
+AI_API_KEY=sk-or-v1-...
+```
+
+**Ollama** (local, no API key needed):
+```env
+AI_API_KEY=ollama
+AI_API_URL=http://host.docker.internal:11434/v1
+AI_MODEL=llama3.1
+```
+
+**Together AI**:
+```env
+AI_API_KEY=...
+AI_API_URL=https://api.together.xyz/v1
+AI_MODEL=meta-llama/Llama-3-70b-chat-hf
+```
+
+**Groq**:
+```env
+AI_API_KEY=gsk_...
+AI_API_URL=https://api.groq.com/openai/v1
+AI_MODEL=llama-3.1-70b-versatile
+```
 
 ## Features in detail
 
@@ -100,7 +131,7 @@ For water meters only. Two modes:
 
 Describe your appliances in plain text (e.g. "3 aircons running 9 hours/day, 1 fridge, washing machine 5x/week"). The AI returns a per-appliance breakdown with estimated kWh/month and cost.
 
-Requires `OPENROUTER_API_KEY` in `.env`. Uses Gemini 2.0 Flash by default (fast, cheap). Override the model with `OPENROUTER_MODEL`.
+Requires `AI_API_KEY` in `.env`. Works with any OpenAI-compatible API — OpenRouter (default), Ollama, Together AI, Groq, etc. Override the model with `AI_MODEL` and the endpoint with `AI_API_URL`.
 
 ## Development
 
@@ -137,7 +168,7 @@ Tests use Vitest and run against HTML fixtures (no live portal calls in CI).
 | Frontend | React 18, TypeScript, Vite 8, Tailwind CSS 3.4, Chart.js 4 |
 | Backend | Express 4, TypeScript, Playwright (Chromium), Cheerio, ExcelJS |
 | Cache | SQLite (better-sqlite3, WAL mode) |
-| AI | OpenRouter API (configurable model) |
+| AI | Any OpenAI-compatible API (OpenRouter, Ollama, Groq, etc.) |
 | Weather | Open-Meteo (free, no key, called from browser) |
 | Deployment | Docker Compose (Nginx + Node on Playwright base image) |
 
@@ -149,7 +180,7 @@ Browser (React)
   │                         └── /api/* ──→ Express backend (port 4000)
   │                                           ├── Playwright (Chromium) ──→ SmartMeter portal
   │                                           ├── SQLite cache (/data volume)
-  │                                           └── OpenRouter API (optional)
+  │                                           └── AI API (OpenAI-compatible, optional)
   └── Open-Meteo API (weather, direct from browser)
 ```
 
@@ -158,7 +189,7 @@ The backend maintains a single Playwright browser instance with per-session cont
 ## Data & privacy
 
 - Your credentials are stored only in your local `.env` file and used server-side to authenticate with the SmartMeter portal. They are never logged, never sent to any third party, and never exposed to the frontend.
-- If AI features are enabled, your average monthly consumption and appliance descriptions are sent to OpenRouter. No credentials or personal identifiers are included.
+- If AI features are enabled, your average monthly consumption and appliance descriptions are sent to the configured AI provider. No credentials or personal identifiers are included.
 - All cached data stays in a local SQLite file (`./data/cache.db`) on your machine.
 - Weather data is fetched from Open-Meteo using Brunei's coordinates. No personal data is sent.
 

@@ -62,7 +62,8 @@ app.listen(PORT, () => {
     console.log("[backend] SmartMeter account configured");
   }
   console.log(`[backend] PIN protection: ${process.env.APP_PIN ? "enabled" : "disabled"}`);
-  console.log(`[backend] AI features: ${process.env.OPENROUTER_API_KEY ? "enabled" : "disabled (no OPENROUTER_API_KEY)"}`);
+  const hasAi = Boolean(process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY);
+  console.log(`[backend] AI features: ${hasAi ? "enabled" : "disabled (set AI_API_KEY)"}`);
 });
 
 // Graceful shutdown
