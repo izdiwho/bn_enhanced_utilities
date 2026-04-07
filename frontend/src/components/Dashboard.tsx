@@ -617,6 +617,69 @@ export function Dashboard({ meters, features }: DashboardProps) {
           />
         )}
       </main>
+
+      {/* Footer */}
+      <footer
+        className="max-w-6xl mx-auto px-4 sm:px-6"
+        style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: "1.5rem", paddingBottom: "2rem", marginTop: "2rem" }}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="font-sans" style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+              Enhanced Utilities Tracker
+            </p>
+            <p className="font-sans" style={{ fontSize: "11px", color: "var(--text-tertiary)" }}>
+              Built by{" "}
+              <a
+                href="https://izdiwho.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--accent-primary)", textDecoration: "none" }}
+              >
+                Izdihar Sulaiman
+              </a>
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/izdiwho"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-sans transition-colors"
+              style={{ fontSize: "11px", color: "var(--text-tertiary)" }}
+            >
+              GitHub
+            </a>
+            <a
+              href="https://www.linkedin.com/in/izdihar-sulaiman"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-sans transition-colors"
+              style={{ fontSize: "11px", color: "var(--text-tertiary)" }}
+            >
+              LinkedIn
+            </a>
+            <a
+              href="https://notes.izdiwho.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-sans transition-colors"
+              style={{ fontSize: "11px", color: "var(--text-tertiary)" }}
+            >
+              Blog
+            </a>
+            <a
+              href="https://buymeacoffee.com/izdiwho/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-sans transition-colors"
+              style={{ fontSize: "11px", color: "var(--accent-primary)" }}
+            >
+              Buy me a coffee
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
