@@ -1,0 +1,25 @@
+# Environment (contains credentials)
+.env
+
+# SQLite cache
+data/
+
+# Dependencies
+node_modules/
+
+# Build output
+backend/dist/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Playwright
+backend/test-results/

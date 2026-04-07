@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Well-lit instrument panel — bright enough to read every number clearly */
+    --bg-deep: #12141a;
+    --bg-surface: #1b1e27;
+    --bg-raised: #242832;
+    --bg-input: #2a2f3a;
+
+    /* Text — high contrast for data clarity */
+    --text-primary: #eeece8;
+    --text-secondary: #a39d94;
+    --text-tertiary: #736e65;
+
+    /* Accent — amber instrument light */
+    --accent-primary: #d9a550;
+    --accent-primary-dim: #a47d3c;
+    --accent-primary-bg: rgba(217, 165, 80, 0.06);
+
+    /* Semantic */
+    --color-electricity: #d9a550;
+    --color-water: #45a8b5;
+    --color-weekend: #8070cc;
+    --color-holiday: #cc5c5c;
+    --color-school: #56966e;
+    --color-weather-high: #cc5c5c;
+    --color-weather-low: #45a8b5;
+
+    /* Borders */
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-medium: rgba(255, 255, 255, 0.12);
+  }
+
+  html {
+    @apply antialiased;
+    font-feature-settings: "tnum", "ss01";
+  }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 13px;
+  }
+
+  body > #root {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Custom scrollbar — thin, warm-tinted */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 2px; }
+}

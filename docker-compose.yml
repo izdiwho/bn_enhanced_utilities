@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      DB_DIR: /data
+      # Access PIN — optional
+      APP_PIN: "${APP_PIN:-}"
+      # SmartMeter credentials — required
+      USMS_IC: "${USMS_IC}"
+      USMS_PASSWORD: "${USMS_PASSWORD}"
+      # AI features — optional
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
+      OPENROUTER_MODEL: "${OPENROUTER_MODEL:-google/gemini-2.0-flash-001}"
+      # SmartMeter base URL override
+      USMS_BASE_URL: "${USMS_BASE_URL:-https://www.usms.com.bn}"
+      FRONTEND_ORIGIN: "http://localhost:3002"
+    volumes:
+      - sqlite_data:/data
+      # Chromium requires sufficient shared memory — mount tmpfs on /dev/shm
+      - type: tmpfs
+        target: /dev/shm
+        tmpfs:
+          size: 268435456  # 256 MiB
+    ports:
+      - "4000:4000"
+    # Chromium is memory-hungry — allow at least 1 GiB
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data
