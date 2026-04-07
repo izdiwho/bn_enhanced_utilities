@@ -15,7 +15,6 @@
  *
  * Confidence band derived from consumption standard deviation.
  */
-import { useState, useEffect } from "react";
 import type { Meter, ConsumptionRecord, TopUpRecord } from "../types/usms.js";
 import {
   calculateCost,
@@ -23,12 +22,11 @@ import {
   ELECTRICITY_TARIFF,
   WATER_TARIFF,
 } from "../utils/tariff.js";
-import { getTopupHistory } from "../api/usms.js";
 
 interface BalanceForecastProps {
   meter: Meter;
   consumptionRecords: ConsumptionRecord[];
-  refreshKey?: number;
+  topupRecords: TopUpRecord[];
 }
 
 function addMonthsToDate(date: Date, months: number): Date {
@@ -52,43 +50,12 @@ function stdDev(values: number[]): number {
   return Math.sqrt(variance);
 }
 
-function getDefaultTopupRange(): { startDate: string; endDate: string } {
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(today.getDate() - 179);
-  const fmt = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return { startDate: fmt(start), endDate: fmt(today) };
-}
 
 export function BalanceForecast({
   meter,
   consumptionRecords,
-  refreshKey,
+  topupRecords,
 }: BalanceForecastProps) {
-  const [topupRecords, setTopupRecords] = useState<TopUpRecord[]>([]);
-  const [topupLoading, setTopupLoading] = useState(false);
-  const [topupError, setTopupError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setTopupLoading(true);
-      setTopupError(null);
-      try {
-        const { startDate, endDate } = getDefaultTopupRange();
-        const res = await getTopupHistory(meter.meterNo, startDate, endDate);
-        if (!cancelled) setTopupRecords(res.records);
-      } catch {
-        if (cancelled) return;
-        setTopupError("Could not load top-up history.");
-      } finally {
-        if (!cancelled) setTopupLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [meter.meterNo, refreshKey]);
 
   const tariff = meter.meterType === "electricity" ? ELECTRICITY_TARIFF : WATER_TARIFF;
 
@@ -259,14 +226,6 @@ export function BalanceForecast({
             </div>
           )}
 
-          {topupLoading && (
-            <p className="font-sans text-xs animate-pulse" style={{ color: "var(--text-tertiary)" }}>
-              Loading top-up history...
-            </p>
-          )}
-          {topupError && (
-            <p className="font-sans text-xs" style={{ color: "var(--accent-primary)" }}>{topupError}</p>
-          )}
         </div>
       )}
     </div>

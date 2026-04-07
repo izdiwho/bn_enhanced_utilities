@@ -36,9 +36,9 @@ import {
   getLast3MonthRanges,
   type ConsumptionDateRange,
 } from "./DateRangePicker.js";
-import { getConsumptionHistory } from "../api/usms.js";
+import { getConsumptionHistory, getTopupHistory } from "../api/usms.js";
 import { fetchWeatherData } from "../api/weather.js";
-import type { Meter, ConsumptionRecord, WeatherData } from "../types/usms.js";
+import type { Meter, ConsumptionRecord, TopUpRecord, WeatherData } from "../types/usms.js";
 
 interface DashboardProps {
   meters: Meter[];
@@ -172,8 +172,10 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState<string | null>(null);
   const [warning, setWarning]     = useState<string | undefined>();
-  // Bump to force TopUpEfficiency + BalanceForecast to refetch
-  const [refreshKey, setRefreshKey] = useState(0);
+  // Shared topup data — auto-loads from cache on mount, manual refresh available
+  const [topupRecords, setTopupRecords] = useState<TopUpRecord[] | null>(null); // null = not loaded yet
+  const [topupLoading, setTopupLoading] = useState(false);
+  const [topupEverLoaded, setTopupEverLoaded] = useState(false);
   const [overlays, setOverlays]   = useState<ChartOverlayState>(defaultOverlayState);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -184,6 +186,30 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
 
   // Track the current fetch so we can ignore stale results
   const fetchIdRef = useRef(0);
+
+  // Fetch topup history — tries cache first (instant), or scrapes (~20s)
+  const loadTopups = useCallback(async (force = false) => {
+    setTopupLoading(true);
+    try {
+      const today = new Date();
+      const start = new Date(today);
+      start.setDate(today.getDate() - 365);
+      const fmt = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const res = await getTopupHistory(meter.meterNo, fmt(start), fmt(today), force);
+      setTopupRecords(res.records);
+      setTopupEverLoaded(true);
+    } catch {
+      // Don't set to empty array on initial silent probe — leave as null so button shows
+      if (topupEverLoaded) setTopupRecords([]);
+    } finally {
+      setTopupLoading(false);
+    }
+  }, [meter.meterNo, topupEverLoaded]);
+
+  // On mount: try loading from cache (no force). If backend has cached data, instant.
+  // If not cached, this will trigger a scrape — show loading state.
+  useEffect(() => { loadTopups(false); }, [loadTopups]);
 
   const loadConsumption = useCallback(
     async (range: ConsumptionDateRange) => {
@@ -282,7 +308,8 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
 
   function handleRefreshAll() {
     loadConsumption(dateRange);
-    setRefreshKey((k) => k + 1);
+    // Force-refresh topups (bypass cache)
+    if (topupRecords !== null) loadTopups(true);
   }
 
   return (
@@ -356,7 +383,7 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
             <BalanceForecast
               meter={meter}
               consumptionRecords={records}
-              refreshKey={refreshKey}
+              topupRecords={topupRecords ?? []}
             />
             <CostProjection
               records={records}
@@ -364,8 +391,53 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
               dateRange={dateRange}
             />
           </div>
+
+          {/* Top-up history — loaded on demand */}
           <div style={{ marginTop: "1.5rem", borderTop: "1px solid var(--border-subtle)", paddingTop: "1.5rem" }}>
-            <TopUpEfficiency meter={meter} consumptionRecords={records} refreshKey={refreshKey} />
+            {topupRecords === null ? (
+              <div className="flex items-center gap-3">
+                {topupLoading ? (
+                  <span className="font-sans text-xs animate-pulse" style={{ color: "var(--text-tertiary)" }}>
+                    Loading top-up history...
+                  </span>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => loadTopups(true)}
+                      className="font-sans font-medium transition-colors"
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--accent-primary)",
+                        padding: "6px 16px",
+                        border: "1px solid var(--accent-primary)",
+                        borderRadius: "999px",
+                        background: "transparent",
+                      }}
+                    >
+                      Load top-up history
+                    </button>
+                    <span className="font-sans" style={{ fontSize: "11px", color: "var(--text-tertiary)" }}>
+                      Takes ~20s (scrapes the portal)
+                    </span>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <span />
+                  <button
+                    onClick={() => loadTopups(true)}
+                    disabled={topupLoading}
+                    className="font-sans transition-colors disabled:opacity-50"
+                    style={{ fontSize: "11px", color: "var(--text-tertiary)" }}
+                  >
+                    {topupLoading ? "Refreshing..." : "Refresh top-up data ↻"}
+                  </button>
+                </div>
+                <TopUpEfficiency meter={meter} consumptionRecords={records} topupRecords={topupRecords} />
+              </>
+            )}
           </div>
         </SectionGroup>
       )}

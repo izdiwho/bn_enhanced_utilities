@@ -235,7 +235,9 @@ usmsRouter.post("/topup-history", async (req: Request, res: Response) => {
       const meter = meters.find((m: Meter) => m.meterNo === meterNo);
       if (!meter) return null;
       setAccountCache(meters);
-      return meter.reportParamTransaction;
+      // Use the UsageHistory reportParam — navigating to UsageHistory?p=X sets the
+      // meter context in the server session, which TransactionHistory then reads.
+      return meter.reportParam;
     };
 
     reportParam = await withAutoRelogin(lookupMeter) ?? undefined;

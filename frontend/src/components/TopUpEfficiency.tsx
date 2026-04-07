@@ -7,14 +7,12 @@
  * - Flag debt-clearing in accent colour
  * - Fetches top-up history internally (like BalanceForecast)
  */
-import { useState, useEffect } from "react";
 import type { Meter, ConsumptionRecord, TopUpRecord } from "../types/usms.js";
-import { getTopupHistory } from "../api/usms.js";
 
 interface TopUpEfficiencyProps {
   meter: Meter;
   consumptionRecords: ConsumptionRecord[];
-  refreshKey?: number;
+  topupRecords: TopUpRecord[];
 }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -61,14 +59,6 @@ function MetricRow({
   );
 }
 
-function getDefaultTopupRange(): { startDate: string; endDate: string } {
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(today.getDate() - 179);
-  const fmt = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return { startDate: fmt(start), endDate: fmt(today) };
-}
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-BN", {
@@ -93,50 +83,7 @@ interface EnrichedTopUp {
   debtCleared: number;
 }
 
-export function TopUpEfficiency({ meter, consumptionRecords, refreshKey }: TopUpEfficiencyProps) {
-  const [topupRecords, setTopupRecords] = useState<TopUpRecord[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const { startDate, endDate } = getDefaultTopupRange();
-        const res = await getTopupHistory(meter.meterNo, startDate, endDate);
-        if (!cancelled) setTopupRecords(res.records);
-      } catch {
-        if (!cancelled) setError("Could not load top-up history.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [meter.meterNo, refreshKey]);
-
-  if (loading) {
-    return (
-      <div>
-        <SectionHeader>Top-Up Efficiency</SectionHeader>
-        <p className="font-sans text-xs animate-pulse" style={{ color: "var(--text-tertiary)" }}>
-          Loading top-up history...
-        </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div>
-        <SectionHeader>Top-Up Efficiency</SectionHeader>
-        <p className="font-sans text-xs" style={{ color: "var(--color-holiday)" }}>{error}</p>
-      </div>
-    );
-  }
-
+export function TopUpEfficiency({ meter, consumptionRecords, topupRecords }: TopUpEfficiencyProps) {
   if (topupRecords.length === 0) {
     return (
       <div>
