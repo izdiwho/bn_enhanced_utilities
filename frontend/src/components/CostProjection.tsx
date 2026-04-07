@@ -36,8 +36,8 @@ function CostHeadline({ amount }: { amount: string }) {
         BND
       </span>
       <span
-        className="font-mono font-semibold leading-none"
-        style={{ color: "var(--text-primary)", fontSize: "28px" }}
+        className="font-mono font-semibold leading-none break-words"
+        style={{ color: "var(--text-primary)", fontSize: "clamp(20px, 6vw, 28px)" }}
       >
         {amount}
       </span>

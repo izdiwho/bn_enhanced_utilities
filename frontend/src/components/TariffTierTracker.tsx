@@ -220,14 +220,14 @@ export function TariffTierTracker({ records, meterType }: TariffTierTrackerProps
               style={{
                 width: `${widthPcts[i]}%`,
                 overflow: "hidden",
+                minWidth: 0,
               }}
             >
               <span
-                className="font-mono"
+                className="font-mono block truncate"
                 style={{
                   fontSize: "10px",
                   color: i === tierIdx ? "var(--accent-primary)" : "var(--text-tertiary)",
-                  whiteSpace: "nowrap",
                 }}
               >
                 {tier.rate.toFixed(2)}/{unit === "kWh" ? "kWh" : "m³"}
@@ -289,19 +289,19 @@ export function TariffTierTracker({ records, meterType }: TariffTierTrackerProps
       {/* Next tier warning */}
       {unitsUntilNextTier !== null && nextTier && (
         <p
-          className="font-sans text-xs mb-1"
+          className="font-sans text-xs mb-1 break-words"
           style={{ color: "var(--text-tertiary)" }}
         >
           <span className="font-mono font-semibold" style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
             {fmt(unitsUntilNextTier, unit)}
           </span>{" "}
-          until tier {tierIdx + 2} —{" "}
+          until tier {tierIdx + 2}{" "}
           <span className="font-mono" style={{ color: "var(--accent-primary)" }}>
             BND {currentRate.toFixed(2)} → {nextTier.rate.toFixed(2)}
           </span>
           {currentRate > 0 && (
             <span
-              className="font-mono ml-1"
+              className="font-mono ml-1 inline-block"
               style={{
                 background: "rgba(204, 92, 92, 0.12)",
                 color: "var(--color-holiday)",

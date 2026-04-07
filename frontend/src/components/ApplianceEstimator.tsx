@@ -9,9 +9,15 @@
  * - Cost column shows min–max cost range
  * - Backward compatible: if AI returns old estimatedKwhPerMonth, uses it for both min and max
  */
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import type { ConsumptionRecord } from "../types/usms.js";
-import { estimateBaseline, type ApplianceBreakdownItem } from "../api/usms.js";
+import {
+  estimateBaseline,
+  getAiPromptHistory,
+  deleteAiPromptHistory,
+  type ApplianceBreakdownItem,
+  type PromptHistoryEntry,
+} from "../api/usms.js";
 import { calculateCost, ELECTRICITY_TARIFF } from "../utils/tariff.js";
 
 interface ApplianceEstimatorProps {
@@ -43,6 +49,13 @@ export function ApplianceEstimator({
   const [result, setResult] = useState<ApplianceBreakdownItem[] | null>(null);
   const [notes, setNotes] = useState<string | null>(null);
   const [rawText, setRawText] = useState<string | null>(null);
+  const [history, setHistory] = useState<PromptHistoryEntry[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Load prompt history from backend
+  useEffect(() => {
+    getAiPromptHistory().then(setHistory).catch(() => {});
+  }, []);
 
   // Average monthly kWh — records are daily, so multiply daily avg by 30
   const totalKwh = consumptionRecords.reduce((s, r) => s + r.consumption, 0);
@@ -70,6 +83,8 @@ export function ApplianceEstimator({
       if (res.appliancesJson?.appliances) {
         setResult(res.appliancesJson.appliances);
         setNotes(res.appliancesJson.notes ?? null);
+        // Refresh history from backend (backend auto-saved the prompt)
+        getAiPromptHistory().then(setHistory).catch(() => {});
         if (onBaselineEstimated) {
           let totalMin = 0, totalMax = 0;
           for (const a of res.appliancesJson.appliances) {
@@ -116,10 +131,63 @@ export function ApplianceEstimator({
         Appliance Estimator
       </p>
 
+      {/* Prompt history — always shown */}
+      <div className="mb-3">
+        <button
+          type="button"
+          onClick={() => setShowHistory((v) => !v)}
+          className="font-sans transition-colors"
+          style={{ fontSize: "11px", color: "var(--text-tertiary)", minHeight: "32px" }}
+        >
+          {history.length > 0
+            ? `${showHistory ? "Hide" : "Previous estimates"} (${history.length})`
+            : "No previous estimates yet"}
+        </button>
+        {history.length > 0 && showHistory && (
+          <div className="mt-2 flex flex-col gap-1">
+            {history.map((h) => (
+              <div
+                key={h.id}
+                className="flex items-center gap-2 rounded"
+                style={{
+                  background: "var(--bg-input)",
+                  border: "1px solid var(--border-subtle)",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDescription(h.prompt);
+                    setShowHistory(false);
+                  }}
+                  className="flex-1 text-left font-mono px-3 truncate transition-colors"
+                  style={{ fontSize: "11px", color: "var(--text-secondary)", minHeight: "44px", display: "flex", alignItems: "center" }}
+                  title={h.prompt}
+                >
+                  {h.prompt}
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await deleteAiPromptHistory(h.id).catch(() => {});
+                    setHistory((prev) => prev.filter((p) => p.id !== h.id));
+                  }}
+                  className="shrink-0 px-3 transition-colors"
+                  style={{ fontSize: "14px", color: "var(--text-tertiary)", minHeight: "44px", minWidth: "44px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  title="Remove from history"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <textarea
-            rows={3}
+            rows={4}
             placeholder={PLACEHOLDER}
             value={description}
             onChange={(e) => setDescription(e.target.value)}

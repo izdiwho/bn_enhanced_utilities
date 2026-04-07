@@ -66,7 +66,7 @@ function Delta({ value, invertColor = false }: DeltaProps) {
   const absPct = Math.abs(value).toFixed(1);
 
   return (
-    <span className="font-mono font-bold" style={{ fontSize: "16px", color }}>
+    <span className="font-mono font-bold" style={{ fontSize: "13px", color }}>
       {isNeutral ? "—" : `${arrow} ${absPct}%`}
     </span>
   );
@@ -212,8 +212,8 @@ export function BillComparison({
     <div>
       <SectionHeader>Bill Comparison</SectionHeader>
 
-      {/* Column headers */}
-      <div className="grid grid-cols-3 gap-2 mb-3">
+      {/* Column headers — hidden on mobile (shown inline per row instead) */}
+      <div className="hidden sm:grid grid-cols-3 gap-2 mb-3">
         <div />
         <div>
           <p
@@ -240,19 +240,14 @@ export function BillComparison({
         </div>
       </div>
 
-      {/* Data rows */}
-      <div className="space-y-2">
+      {/* Data rows — desktop: 3-col grid; mobile: stacked blocks per metric */}
+      {/* Desktop rows */}
+      <div className="hidden sm:block space-y-2">
         {rows.map((row) => (
           <div key={row.label} className="grid grid-cols-3 gap-2 items-baseline">
-            {/* Row label */}
-            <p
-              className="font-sans"
-              style={{ fontSize: "11px", color: "var(--text-tertiary)" }}
-            >
+            <p className="font-sans" style={{ fontSize: "11px", color: "var(--text-tertiary)" }}>
               {row.label}
             </p>
-
-            {/* Previous value */}
             <p className="font-mono" style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
               {row.prefix && (
                 <span style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>
@@ -261,24 +256,62 @@ export function BillComparison({
               )}
               {row.prevValue}
             </p>
-
-            {/* Current value + delta */}
             <div className="flex items-baseline gap-2 flex-wrap">
-              <p
-                className="font-mono font-semibold"
-                style={{ fontSize: "20px", color: "var(--text-primary)" }}
-              >
+              <p className="font-mono font-semibold" style={{ fontSize: "20px", color: "var(--text-primary)" }}>
                 {row.prefix && (
-                  <span
-                    className="font-normal"
-                    style={{ fontSize: "10px", color: "var(--text-tertiary)" }}
-                  >
+                  <span className="font-normal" style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>
                     {row.prefix}{" "}
                   </span>
                 )}
                 {row.currValue}
               </p>
               <Delta value={row.delta} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Mobile rows — stacked block per metric */}
+      <div className="sm:hidden space-y-3">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className="space-y-1"
+            style={{ borderBottom: "1px solid var(--border-subtle)", paddingBottom: "0.75rem" }}
+          >
+            <p className="font-sans uppercase" style={{ fontSize: "10px", color: "var(--text-tertiary)", letterSpacing: "0.1em" }}>
+              {row.label}
+            </p>
+            <div className="flex items-baseline justify-between gap-3 flex-wrap">
+              {/* Previous */}
+              <div>
+                <p className="font-mono" style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>
+                  {prevStats.label}
+                </p>
+                <p className="font-mono" style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                  {row.prefix && (
+                    <span style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>{row.prefix} </span>
+                  )}
+                  {row.prevValue}
+                </p>
+              </div>
+              {/* Current + delta */}
+              <div className="text-right">
+                <p className="font-mono" style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>
+                  {currStats.label}
+                </p>
+                <div className="flex items-baseline gap-2 justify-end">
+                  <p className="font-mono font-semibold" style={{ fontSize: "16px", color: "var(--text-primary)" }}>
+                    {row.prefix && (
+                      <span className="font-normal" style={{ fontSize: "10px", color: "var(--text-tertiary)" }}>
+                        {row.prefix}{" "}
+                      </span>
+                    )}
+                    {row.currValue}
+                  </p>
+                  <Delta value={row.delta} />
+                </div>
+              </div>
             </div>
           </div>
         ))}

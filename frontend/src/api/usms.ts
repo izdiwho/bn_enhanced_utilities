@@ -42,7 +42,7 @@ export class ApiRequestError extends Error {
 }
 
 async function request<T>(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "DELETE",
   path: string,
   body?: unknown,
   force = false
@@ -157,6 +157,23 @@ export async function estimateBaseline(
     monthlyKwh,
     applianceList,
   });
+}
+
+// ─── AI prompt history ───────────────────────────────────────────────────────
+
+export interface PromptHistoryEntry {
+  id: number;
+  prompt: string;
+  lastUsedAt: number;
+}
+
+export async function getAiPromptHistory(): Promise<PromptHistoryEntry[]> {
+  const res = await request<{ history: PromptHistoryEntry[] }>("GET", "/ai/prompt-history");
+  return res.history;
+}
+
+export async function deleteAiPromptHistory(id: number): Promise<void> {
+  await request("DELETE", `/ai/prompt-history/${id}`);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

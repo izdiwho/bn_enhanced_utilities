@@ -14,8 +14,22 @@
 import { Router, Request, Response } from "express";
 import { createHash } from "crypto";
 import { getDb } from "../cache.js";
+import { getPromptHistory, savePromptHistory, deletePromptHistory } from "../cache.js";
 
 export const aiRouter = Router();
+
+// ─── Prompt history endpoints ────────────────────────────────────────────────
+
+aiRouter.get("/prompt-history", (_req: Request, res: Response) => {
+  return res.json({ history: getPromptHistory() });
+});
+
+aiRouter.delete("/prompt-history/:id", (req: Request, res: Response) => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+  deletePromptHistory(id);
+  return res.json({ ok: true });
+});
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const DEFAULT_MODEL = "qwen/qwen3-235b-a22b-2507";
@@ -108,6 +122,10 @@ Respond ONLY with a JSON object like:
   // Check cache first — same appliance list + kWh always returns same result
   const cached = getCachedEstimate(promptHash);
   if (cached) {
+    // Still save to prompt history (may be first time this prompt is used since history feature)
+    if (sanitizedAppliances.length > 0) {
+      savePromptHistory(sanitizedAppliances.join(", ").substring(0, 500));
+    }
     return res.json({ ...cached, fromCache: true });
   }
 
@@ -155,6 +173,10 @@ Respond ONLY with a JSON object like:
     // Cache the result so identical inputs always return the same output
     if (appliancesJson) {
       setCachedEstimate(promptHash, appliancesJson, rawText);
+      // Save the user's appliance description to prompt history
+      if (sanitizedAppliances.length > 0) {
+        savePromptHistory(sanitizedAppliances.join(", ").substring(0, 500));
+      }
     }
 
     return res.json({ appliancesJson, rawText });

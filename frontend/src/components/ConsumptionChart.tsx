@@ -101,9 +101,12 @@ export function ConsumptionChart({
   dailyBaselineMin,
   dailyBaselineMax,
 }: ConsumptionChartProps) {
+  const isMobileEarly = typeof window !== "undefined" && window.innerWidth < 640;
+  const chartHeight = isMobileEarly ? "280px" : "380px";
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: "380px", color: "var(--text-tertiary)" }}>
+      <div className="flex items-center justify-center" style={{ height: chartHeight, color: "var(--text-tertiary)" }}>
         <span className="font-mono text-xs">Loading chart...</span>
       </div>
     );
@@ -111,7 +114,7 @@ export function ConsumptionChart({
 
   if (records.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2" style={{ height: "380px" }}>
+      <div className="flex flex-col items-center justify-center gap-2" style={{ height: chartHeight }}>
         <p className="font-sans text-sm" style={{ color: "var(--text-tertiary)" }}>No consumption data available.</p>
       </div>
     );
@@ -250,8 +253,15 @@ export function ConsumptionChart({
 
   const hasLegend = showWeather || (overlays?.showAiBaseline && dailyBaselineKwh != null);
 
-  // Auto-skip x-axis labels when many bars
-  const skipModulo = records.length > 20 ? 3 : records.length > 10 ? 2 : 1;
+  // Auto-skip x-axis labels when many bars — skip more aggressively on narrow screens
+  const isMobile = isMobileEarly;
+  const skipModulo = records.length > 15 && isMobile
+    ? 5
+    : records.length > 20
+    ? 3
+    : records.length > 10
+    ? 2
+    : 1;
 
   const options: ChartOptions<"bar"> = {
     responsive: true,
@@ -364,7 +374,7 @@ export function ConsumptionChart({
       {warning && (
         <p className="font-sans text-xs mb-2" style={{ color: "var(--accent-primary)" }}>{warning}</p>
       )}
-      <div style={{ height: "380px" }}>
+      <div style={{ height: isMobile ? "280px" : "380px" }}>
         <Chart type="bar" data={data} options={{ ...options, maintainAspectRatio: false }} />
       </div>
 

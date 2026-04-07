@@ -70,6 +70,13 @@ function applySchema(d: Database.Database): void {
       response_json TEXT NOT NULL,
       cached_at     INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS ai_prompt_history (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      prompt        TEXT NOT NULL UNIQUE,
+      created_at    INTEGER NOT NULL,
+      last_used_at  INTEGER NOT NULL
+    );
   `);
 }
 
@@ -191,4 +198,33 @@ export function setTopupCache(
       "INSERT OR REPLACE INTO topup_cache (meter_no, start_date, end_date, response_json, cached_at) VALUES (?, ?, ?, ?, ?)"
     )
     .run(meterNo, startDate, endDate, JSON.stringify(data), Date.now());
+}
+
+// ─── AI prompt history ───────────────────────────────────────────────────────
+
+const MAX_PROMPT_HISTORY = 20;
+
+export function getPromptHistory(): { id: number; prompt: string; lastUsedAt: number }[] {
+  return getDb()
+    .prepare("SELECT id, prompt, last_used_at as lastUsedAt FROM ai_prompt_history ORDER BY last_used_at DESC LIMIT ?")
+    .all(MAX_PROMPT_HISTORY) as { id: number; prompt: string; lastUsedAt: number }[];
+}
+
+export function savePromptHistory(prompt: string): void {
+  const now = Date.now();
+  getDb()
+    .prepare(
+      "INSERT INTO ai_prompt_history (prompt, created_at, last_used_at) VALUES (?, ?, ?) ON CONFLICT(prompt) DO UPDATE SET last_used_at = ?"
+    )
+    .run(prompt, now, now, now);
+  // Prune old entries beyond limit
+  getDb()
+    .prepare(
+      "DELETE FROM ai_prompt_history WHERE id NOT IN (SELECT id FROM ai_prompt_history ORDER BY last_used_at DESC LIMIT ?)"
+    )
+    .run(MAX_PROMPT_HISTORY);
+}
+
+export function deletePromptHistory(id: number): void {
+  getDb().prepare("DELETE FROM ai_prompt_history WHERE id = ?").run(id);
 }

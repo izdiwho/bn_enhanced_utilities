@@ -82,9 +82,12 @@ export function WaterTankEstimator({ consumptionRecords }: WaterTankEstimatorPro
       fontSize: "11px",
       border: "1px solid",
       borderColor: isActive ? "var(--color-water)" : "var(--border-subtle)",
-      padding: "3px 10px",
+      padding: "10px 14px",
+      minHeight: "44px",
       borderRadius: "999px",
       transition: "color 0.15s, border-color 0.15s",
+      display: "inline-flex",
+      alignItems: "center",
     };
   }
 

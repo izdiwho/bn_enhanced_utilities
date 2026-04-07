@@ -138,10 +138,10 @@ export function BalanceForecast({
           {depletionDate ? (
             <div>
               <p
-                className="font-mono font-semibold leading-none mb-1"
+                className="font-mono font-semibold leading-none mb-1 break-words"
                 style={{
                   color: monthsRemaining < 1 ? "var(--color-holiday)" : "var(--accent-primary)",
-                  fontSize: "28px",
+                  fontSize: "clamp(20px, 6vw, 28px)",
                 }}
               >
                 ~{formatDate(depletionDate)}

@@ -161,10 +161,13 @@ export function ConsumptionRangePicker({
       border: "1px solid",
       borderColor: isActive ? "var(--accent-primary)" : "var(--border-subtle)",
       background: isActive ? "rgba(217, 165, 80, 0.12)" : "transparent",
-      padding: "4px 12px",
+      padding: "8px 14px",
+      minHeight: "36px",
       borderRadius: "999px",
       transition: "color 0.15s, border-color 0.15s, background 0.15s",
       letterSpacing: "0.02em",
+      display: "inline-flex",
+      alignItems: "center",
     };
   }
 
@@ -197,14 +200,14 @@ export function ConsumptionRangePicker({
 
       {customMode && (
         <div className="flex flex-wrap items-center gap-3 mt-2 w-full">
-          <div className="flex items-center gap-1.5">
-            <label className="font-sans text-xs" style={{ color: "var(--text-tertiary)" }}>From</label>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <label className="font-sans text-xs shrink-0" style={{ color: "var(--text-tertiary)" }}>From</label>
             <input
               type="date"
               value={customStart}
               max={today}
               onChange={(e) => setCustomStart(e.target.value)}
-              className="font-mono text-xs px-2 py-1 rounded focus:outline-none"
+              className="font-mono text-xs px-2 py-1 rounded focus:outline-none flex-1 sm:flex-none"
               style={{
                 background: "var(--bg-input)",
                 color: "var(--text-primary)",
@@ -212,14 +215,14 @@ export function ConsumptionRangePicker({
               }}
             />
           </div>
-          <div className="flex items-center gap-1.5">
-            <label className="font-sans text-xs" style={{ color: "var(--text-tertiary)" }}>To</label>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <label className="font-sans text-xs shrink-0" style={{ color: "var(--text-tertiary)" }}>To</label>
             <input
               type="date"
               value={customEnd}
               max={today}
               onChange={(e) => setCustomEnd(e.target.value)}
-              className="font-mono text-xs px-2 py-1 rounded focus:outline-none"
+              className="font-mono text-xs px-2 py-1 rounded focus:outline-none flex-1 sm:flex-none"
               style={{
                 background: "var(--bg-input)",
                 color: "var(--text-primary)",
@@ -229,10 +232,13 @@ export function ConsumptionRangePicker({
           </div>
           <button
             onClick={handleCustomApply}
-            className="font-sans text-xs font-medium px-4 py-1 rounded-full transition-colors"
+            className="font-sans text-xs font-medium px-4 rounded-full transition-colors"
             style={{
               background: "var(--accent-primary)",
               color: "var(--bg-deep)",
+              minHeight: "36px",
+              display: "inline-flex",
+              alignItems: "center",
             }}
           >
             Apply

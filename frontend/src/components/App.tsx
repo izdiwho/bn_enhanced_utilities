@@ -139,7 +139,7 @@ function PinScreen({ onVerified }: PinScreenProps) {
             onChange={(e) => setPin(e.target.value)}
             disabled={loading}
             autoFocus
-            className="w-full font-mono text-center text-3xl py-3 rounded-lg border outline-none transition-colors"
+            className="w-full font-mono text-center text-3xl py-4 rounded-lg border outline-none transition-colors"
             style={{
               background: "var(--bg-input)",
               borderColor: error ? "var(--color-holiday)" : "var(--border-medium)",
@@ -163,7 +163,7 @@ function PinScreen({ onVerified }: PinScreenProps) {
           <button
             type="submit"
             disabled={loading || !pin.trim()}
-            className="w-full py-2.5 rounded-full font-sans text-sm font-medium transition-opacity disabled:opacity-40"
+            className="w-full py-3.5 rounded-full font-sans text-sm font-medium transition-opacity disabled:opacity-40"
             style={{
               background: "var(--accent-primary)",
               color: "var(--bg-deep)",

@@ -51,11 +51,11 @@ function StatCell({ value, valueSuffix, label, sub, isLast, isCost, isFirst }: S
 
   return (
     <div
-      className="flex-1 min-w-0 px-4 first:pl-0"
+      className="flex-1 min-w-0 px-2 sm:px-4 first:pl-0"
       style={{
         borderRight: isLast ? "none" : "1px solid var(--border-subtle)",
         borderLeft: isFirst ? "2px solid rgba(217, 165, 80, 0.30)" : undefined,
-        paddingLeft: isFirst ? "12px" : undefined,
+        paddingLeft: isFirst ? "10px" : undefined,
       }}
     >
       {/* Label above the value */}
@@ -69,18 +69,18 @@ function StatCell({ value, valueSuffix, label, sub, isLast, isCost, isFirst }: S
       >
         {label}
       </p>
-      <div className="flex items-baseline gap-1">
+      <div className="flex items-baseline gap-1 flex-wrap">
         {currencyNode}
         <span
           className="font-mono font-bold leading-none"
-          style={{ color: "var(--text-primary)", fontSize: "26px" }}
+          style={{ color: "var(--text-primary)", fontSize: "clamp(18px, 4vw, 26px)" }}
         >
           {displayValue}
         </span>
         {valueSuffix && (
           <span
             className="font-mono font-normal"
-            style={{ color: "var(--text-secondary)", fontSize: "13px" }}
+            style={{ color: "var(--text-secondary)", fontSize: "11px" }}
           >
             {valueSuffix}
           </span>
@@ -122,34 +122,44 @@ export function SummaryStats({ records, unitLabel, meterType }: SummaryStatsProp
 
   return (
     <div className="flex flex-wrap">
-      {/* On small screens: 2-col grid */}
-      <div className="w-full grid grid-cols-2 gap-y-6 sm:hidden">
-        <StatCell
-          value={totalConsumption.toFixed(1)}
-          valueSuffix={unitLabel}
-          label="Total"
-          sub={`${dayCount} days`}
-          isFirst
-        />
-        <StatCell
-          value={`BND ${totalCost.toFixed(2)}`}
-          label="Total cost"
-          sub={`${dayCount} days`}
-          isLast
-          isCost
-        />
-        <StatCell
-          value={avgDaily.toFixed(2)}
-          valueSuffix={`${unitLabel}/day`}
-          label="Daily avg"
-        />
-        <StatCell
-          value={peakRecord.consumption.toFixed(2)}
-          valueSuffix={unitLabel}
-          label="Peak day"
-          sub={formatDate(peakRecord.period)}
-          isLast
-        />
+      {/* On small screens: 2-col grid with horizontal separator between rows */}
+      <div className="w-full sm:hidden">
+        {/* Row 1 */}
+        <div
+          className="grid grid-cols-2 gap-y-0 pb-4"
+          style={{ borderBottom: "1px solid var(--border-subtle)" }}
+        >
+          <StatCell
+            value={totalConsumption.toFixed(1)}
+            valueSuffix={unitLabel}
+            label="Total"
+            sub={`${dayCount} days`}
+            isFirst
+          />
+          <StatCell
+            value={`BND ${totalCost.toFixed(2)}`}
+            label="Total cost"
+            sub={`${dayCount} days`}
+            isLast
+            isCost
+          />
+        </div>
+        {/* Row 2 */}
+        <div className="grid grid-cols-2 gap-y-0 pt-4">
+          <StatCell
+            value={avgDaily.toFixed(2)}
+            valueSuffix={`${unitLabel}/day`}
+            label="Daily avg"
+            isFirst
+          />
+          <StatCell
+            value={peakRecord.consumption.toFixed(2)}
+            valueSuffix={unitLabel}
+            label="Peak day"
+            sub={formatDate(peakRecord.period)}
+            isLast
+          />
+        </div>
       </div>
 
       {/* On sm+ screens: horizontal row */}

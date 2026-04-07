@@ -74,6 +74,8 @@ function ToggleItem({ active, onClick, disabled = false, rectColor, children }: 
         fontWeight: active ? 500 : 400,
         fontSize: "12px",
         letterSpacing: "0.08em",
+        minHeight: "32px",
+        padding: "6px 8px",
       }}
     >
       {/* 10×5px rectangle indicator — filled when active, outlined when inactive */}
@@ -109,7 +111,7 @@ export function ChartToggles({
     state.showAiBaseline;
 
   return (
-    <div className="flex flex-wrap gap-4 items-center">
+    <div className="flex flex-wrap gap-1 sm:gap-4 items-center">
       <ToggleItem
         active={!anyActive}
         onClick={onCleanView}

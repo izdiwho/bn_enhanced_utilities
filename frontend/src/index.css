@@ -56,3 +56,7 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-medium); border-radius: 2px; }
 }
+
+@media (max-width: 640px) {
+  body { font-size: 14px; }
+}

@@ -42,11 +42,11 @@ function MetricRow({
   accentValue?: string;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 py-1" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+    <div className="flex items-baseline justify-between gap-2 py-1.5 flex-wrap" style={{ borderBottom: "1px solid var(--border-subtle)", minHeight: "44px" }}>
       <span className="font-sans uppercase shrink-0" style={{ fontSize: "11px", color: "var(--text-tertiary)", letterSpacing: "0.08em" }}>
         {label}
       </span>
-      <span className="font-mono text-right" style={{ fontSize: "16px", color: "var(--text-secondary)" }}>
+      <span className="font-mono text-right break-words" style={{ fontSize: "15px", color: "var(--text-secondary)" }}>
         {accentValue && (
           <span style={{ color: "var(--accent-primary)" }}>{accentValue} </span>
         )}
@@ -243,9 +243,10 @@ export function TopUpEfficiency({ meter, consumptionRecords, topupRecords }: Top
               style={{
                 borderLeft: `2px solid ${item.isActive ? "var(--accent-primary)" : "var(--border-subtle)"}`,
                 paddingLeft: "10px",
-                paddingTop: "6px",
-                paddingBottom: "6px",
+                paddingTop: "10px",
+                paddingBottom: "10px",
                 background: isEvenRow ? "rgba(36, 40, 50, 0.5)" : "transparent",
+                minHeight: "44px",
               }}
             >
               {/* Date + amount */}

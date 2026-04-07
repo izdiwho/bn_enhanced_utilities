@@ -80,11 +80,12 @@ function MeterTab({ meter, active, onClick }: MeterTabProps) {
   return (
     <button
       onClick={onClick}
-      className="pb-3 transition-colors relative flex items-center gap-2"
+      className="pb-3 transition-colors relative flex items-center gap-2 shrink-0"
       style={{
         color: active ? "var(--text-primary)" : "var(--text-tertiary)",
         fontWeight: active ? 500 : 400,
         fontSize: "13px",
+        minHeight: "44px",
       }}
     >
       {/* 4px square indicator to the left when active */}
@@ -317,27 +318,29 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
 
       {/* ── OVERVIEW: Summary stats + balance ──────────────────────────────── */}
       <SectionGroup label="Overview" first>
-        {/* Balance + remaining units + refresh */}
-        <div className="flex flex-wrap items-end gap-6 mb-6">
-          <div>
-            <p className="font-sans uppercase mb-1" style={{ fontSize: "11px", letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>
-              Balance
-            </p>
-            <p className="font-mono font-bold" style={{ fontSize: "32px", color: "var(--text-primary)", lineHeight: 1 }}>
-              <span style={{ fontSize: "18px", fontWeight: 400, color: "var(--text-secondary)" }}>BND </span>
-              {meter.remainingBalance.toFixed(2)}
-            </p>
+        {/* Balance + remaining units + refresh — stacks vertically on mobile */}
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-4 sm:gap-6 mb-6">
+          <div className="flex gap-6 sm:contents">
+            <div>
+              <p className="font-sans uppercase mb-1" style={{ fontSize: "11px", letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>
+                Balance
+              </p>
+              <p className="font-mono font-bold" style={{ fontSize: "28px", color: "var(--text-primary)", lineHeight: 1 }}>
+                <span style={{ fontSize: "16px", fontWeight: 400, color: "var(--text-secondary)" }}>BND </span>
+                {meter.remainingBalance.toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <p className="font-sans uppercase mb-1" style={{ fontSize: "11px", letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>
+                Remaining
+              </p>
+              <p className="font-mono font-bold" style={{ fontSize: "28px", color: "var(--text-primary)", lineHeight: 1 }}>
+                {meter.remainingUnit.toFixed(2)}
+                <span style={{ fontSize: "16px", fontWeight: 400, color: "var(--text-secondary)" }}> {meter.remainingUnitLabel}</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-sans uppercase mb-1" style={{ fontSize: "11px", letterSpacing: "0.1em", color: "var(--text-tertiary)" }}>
-              Remaining
-            </p>
-            <p className="font-mono font-bold" style={{ fontSize: "32px", color: "var(--text-primary)", lineHeight: 1 }}>
-              {meter.remainingUnit.toFixed(2)}
-              <span style={{ fontSize: "18px", fontWeight: 400, color: "var(--text-secondary)" }}> {meter.remainingUnitLabel}</span>
-            </p>
-          </div>
-          <div className="self-end mb-1 flex items-center gap-3 ml-auto">
+          <div className="flex items-center gap-3 sm:self-end sm:mb-1 sm:ml-auto">
             {meter.lastUpdated && (
               <p className="font-mono" style={{ fontSize: "11px", color: "var(--text-tertiary)" }}>
                 Updated {new Date(meter.lastUpdated).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
@@ -351,6 +354,9 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
                 fontSize: "11px",
                 color: "var(--accent-primary)",
                 letterSpacing: "0.05em",
+                minHeight: "44px",
+                display: "flex",
+                alignItems: "center",
               }}
             >
               {loading ? "Refreshing..." : "Refresh ↻"}
@@ -557,7 +563,7 @@ export function Dashboard({ meters, features }: DashboardProps) {
     <div className="min-h-screen" style={{ background: "var(--bg-deep)", color: "var(--text-primary)" }}>
       {/* Header */}
       <header style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-        <div className="max-w-6xl mx-auto px-5 py-5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-5 py-4 sm:py-5">
           <div>
             <h1
               className="font-sans font-semibold"
@@ -584,11 +590,11 @@ export function Dashboard({ meters, features }: DashboardProps) {
         <div style={{ borderTop: "1px solid var(--border-subtle)" }} />
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
         {/* Meter selector tabs */}
         {meters.length > 1 && (
           <div
-            className="flex gap-6"
+            className="flex gap-4 sm:gap-6 overflow-x-auto"
             style={{ borderBottom: "1px solid var(--border-subtle)" }}
           >
             {meters.map((meter) => (
