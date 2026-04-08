@@ -21,6 +21,9 @@ import {
   getMeterDetailsCache, setMeterDetailsCache,
   getConsumptionCache, setConsumptionCache,
   getTopupCache, setTopupCache,
+  getDailyConsumption,
+  getTopupTransactions,
+  getLatestMeterSnapshots,
 } from "../cache.js";
 import { usmsGet } from "../scraper/client.js";
 import { parseHomePage, type Meter } from "../scraper/mainPage.js";
@@ -57,7 +60,30 @@ async function withAutoRelogin<T>(fn: () => Promise<T>): Promise<T> {
 usmsRouter.post("/account", async (req: Request, res: Response) => {
   if (!isForced(req)) {
     const cached = getAccountCache();
-    if (cached) return res.json({ meters: cached, fromCache: true });
+    if (cached) return res.json({ meters: cached, fromCache: true, source: "cache" });
+
+    // Try reading from normalized meter snapshots
+    const snapshots = getLatestMeterSnapshots();
+    if (snapshots.length > 0) {
+      const meters = snapshots.map((s) => ({
+        meterNo: s.meter_no,
+        meterType: s.meter_type as "electricity" | "water",
+        status: s.status,
+        fullName: s.full_name,
+        address: s.address,
+        kampong: "",
+        mukim: "",
+        district: "",
+        postcode: "",
+        remainingUnit: s.remaining_unit,
+        remainingUnitLabel: s.unit_label,
+        remainingBalance: s.balance,
+        lastUpdated: s.last_updated,
+        reportParam: "",
+        reportParamTransaction: "",
+      }));
+      return res.json({ meters, fromCache: true, source: "normalized" });
+    }
   }
 
   try {
@@ -71,7 +97,7 @@ usmsRouter.post("/account", async (req: Request, res: Response) => {
 
     const meters = await withAutoRelogin(fetchMeters);
     setAccountCache(meters);
-    return res.json({ meters, fromCache: false });
+    return res.json({ meters, fromCache: false, source: "scraper" });
   } catch (err) {
     console.error("[usms/account]", (err as Error).message);
     return res.status(500).json({ error: "Failed to fetch account data" });
@@ -149,8 +175,19 @@ usmsRouter.post("/consumption-history", async (req: Request, res: Response) => {
   }
 
   if (!isForced(req)) {
+    // Try cache first
     const cached = getConsumptionCache(meterNo, startDate, endDate);
-    if (cached) return res.json({ ...(cached as object), fromCache: true });
+    if (cached) return res.json({ ...(cached as object), fromCache: true, source: "cache" });
+
+    // Try normalized table
+    const normalized = getDailyConsumption(meterNo, startDate, endDate);
+    if (normalized.length > 0) {
+      const records = normalized.map((r) => ({
+        period: r.date,
+        consumption: r.consumption,
+      }));
+      return res.json({ records, fromCache: true, source: "normalized" });
+    }
   }
 
   try {
@@ -185,7 +222,7 @@ usmsRouter.post("/consumption-history", async (req: Request, res: Response) => {
 
     const payload = { records: result.records, warning: result.warning };
     setConsumptionCache(meterNo, startDate, endDate, payload);
-    return res.json({ ...payload, fromCache: false });
+    return res.json({ ...payload, fromCache: false, source: "scraper" });
   } catch (err) {
     const msg = (err as Error).message;
     if (msg === "session_expired") {
@@ -220,8 +257,27 @@ usmsRouter.post("/topup-history", async (req: Request, res: Response) => {
   }
 
   if (!isForced(req)) {
+    // Try cache first
     const cached = getTopupCache(meterNo, startDate, endDate);
-    if (cached) return res.json({ ...(cached as object), fromCache: true });
+    if (cached) return res.json({ ...(cached as object), fromCache: true, source: "cache" });
+
+    // Try normalized table
+    const normalized = getTopupTransactions(meterNo, startDate, endDate);
+    if (normalized.length > 0) {
+      const records = normalized.map((r) => ({
+        topupDate: r.topup_date,
+        transactionNo: r.transaction_no,
+        meterNo: r.meter_no,
+        topupAmount: r.topup_amount,
+        initialLoanDebtCleared: r.debt_cleared,
+        actualRechargeAmount: r.recharge_amount,
+        unitsCredited: r.units_credited,
+        paymentMode: r.payment_mode,
+        siteName: r.site_name,
+        source: r.source,
+      }));
+      return res.json({ records, fromCache: true, source: "normalized" });
+    }
   }
 
   try {
@@ -256,7 +312,7 @@ usmsRouter.post("/topup-history", async (req: Request, res: Response) => {
 
     const payload = { records: result.records, warning: result.warning };
     setTopupCache(meterNo, startDate, endDate, payload);
-    return res.json({ ...payload, fromCache: false });
+    return res.json({ ...payload, fromCache: false, source: "scraper" });
   } catch (err) {
     const msg = (err as Error).message;
     if (msg === "session_expired") {

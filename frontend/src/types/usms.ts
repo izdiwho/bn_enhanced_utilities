@@ -62,9 +62,16 @@ export interface ApiError {
   error: string;
 }
 
+export interface LastScrapeInfo {
+  at: number;
+  status: "success" | "error";
+  trigger: "schedule" | "manual" | "startup";
+}
+
 export interface ConfigResponse {
   meters: Meter[];
   features: {
     ai: boolean;
   };
+  lastScrape?: LastScrapeInfo | null;
 }

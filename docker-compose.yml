@@ -21,6 +21,11 @@ services:
       # Legacy aliases (backward compat)
       OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
       OPENROUTER_MODEL: "${OPENROUTER_MODEL:-}"
+      # Scheduled scraper
+      SCRAPE_INTERVAL_CRON: "${SCRAPE_INTERVAL_CRON:-0 * * * *}"
+      SCRAPE_ON_STARTUP: "${SCRAPE_ON_STARTUP:-true}"
+      SCRAPE_CONSUMPTION_MONTHS: "${SCRAPE_CONSUMPTION_MONTHS:-3}"
+      SCRAPE_TOPUP_DAYS: "${SCRAPE_TOPUP_DAYS:-365}"
       # SmartMeter base URL override
       USMS_BASE_URL: "${USMS_BASE_URL:-https://www.usms.com.bn}"
       FRONTEND_ORIGIN: "http://localhost:3002"

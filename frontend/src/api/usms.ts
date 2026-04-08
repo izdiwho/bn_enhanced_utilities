@@ -176,6 +176,84 @@ export async function deleteAiPromptHistory(id: number): Promise<void> {
   await request("DELETE", `/ai/prompt-history/${id}`);
 }
 
+// ─── Scraper control ──────────────────────────────────────────────────────────
+
+export interface ScrapeStatusResponse {
+  running: boolean;
+  lastScrape: {
+    jobId: number;
+    trigger: "schedule" | "manual" | "startup";
+    status: "running" | "success" | "error";
+    startedAt: number;
+    finishedAt?: number;
+    metersFound?: number;
+    consumptionRecords?: number;
+    topupRecords?: number;
+    errorMessage?: string;
+  } | null;
+}
+
+export async function triggerScrape(): Promise<void> {
+  return request("POST", "/scrape/trigger");
+}
+
+export async function getScrapeStatus(): Promise<ScrapeStatusResponse> {
+  return request<ScrapeStatusResponse>("GET", "/scrape/status");
+}
+
+// ─── Analytics ───────────────────────────────────────────────────────────────
+
+export interface TrendAnalysis {
+  period: "7d" | "30d" | "90d";
+  direction: "up" | "down" | "stable";
+  changePercent: number;
+  currentAvgDaily: number;
+  previousAvgDaily: number;
+  insight: string;
+}
+
+export interface ForecastDay {
+  date: string;
+  predicted: number;
+  lower: number;
+  upper: number;
+}
+
+export interface Forecast {
+  meterNo: string;
+  days: ForecastDay[];
+  method: "ema";
+  basedOnDays: number;
+}
+
+export async function getTrend(
+  meterNo: string,
+  period: TrendAnalysis["period"] = "30d"
+): Promise<TrendAnalysis> {
+  const res = await fetch(`${API_BASE}/analytics/trend?meterNo=${encodeURIComponent(meterNo)}&period=${period}`, {
+    headers: (() => {
+      const h: Record<string, string> = {};
+      const t = getPinToken(); if (t) h["X-Pin-Token"] = t;
+      return h;
+    })(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch trend");
+  return res.json();
+}
+
+export async function getForecast(meterNo: string): Promise<Forecast> {
+  const res = await fetch(`${API_BASE}/analytics/forecast?meterNo=${encodeURIComponent(meterNo)}`, {
+    headers: (() => {
+      const h: Record<string, string> = {};
+      const t = getPinToken(); if (t) h["X-Pin-Token"] = t;
+      return h;
+    })(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch forecast");
+  return res.json();
+}
+
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Returns true for any HTTP error (used by components to show generic error UI). */

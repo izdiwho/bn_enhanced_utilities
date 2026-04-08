@@ -30,6 +30,9 @@ import { CostProjection } from "./CostProjection.js";
 import { TariffTierTracker } from "./TariffTierTracker.js";
 import { BillComparison } from "./BillComparison.js";
 import { TopUpEfficiency } from "./TopUpEfficiency.js";
+import { ScrapeStatus } from "./ScrapeStatus.js";
+import { TrendIndicator } from "./TrendIndicator.js";
+import { ForecastChart } from "./ForecastChart.js";
 import {
   ConsumptionRangePicker,
   getThisMonthRange,
@@ -340,6 +343,13 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
               </p>
             </div>
           </div>
+          {/* Trend indicator — only for electricity meters */}
+          {meter.meterType === "electricity" && (
+            <div className="flex items-center sm:self-end sm:mb-1">
+              <TrendIndicator meterNo={meter.meterNo} period="30d" />
+            </div>
+          )}
+
           <div className="flex items-center gap-3 sm:self-end sm:mb-1 sm:ml-auto">
             {meter.lastUpdated && (
               <p className="font-mono" style={{ fontSize: "11px", color: "var(--text-tertiary)" }}>
@@ -510,6 +520,13 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
         )}
       </SectionGroup>
 
+      {/* ── FORECAST (7-day): Electricity meters only ─────────────────────────── */}
+      {meter.meterType === "electricity" && (
+        <SectionGroup label="Forecast (7-day)">
+          <ForecastChart meterNo={meter.meterNo} unitLabel={meter.remainingUnitLabel} />
+        </SectionGroup>
+      )}
+
       {/* ── INSIGHTS: BillComparison, UsagePatterns + AnomalyDetector (2-col) ── */}
       {hasInsights && (
         <SectionGroup label="Insights">
@@ -526,7 +543,7 @@ function MeterPanel({ meter, features }: MeterPanelProps) {
         </SectionGroup>
       )}
 
-      {/* ── TOOLS: ApplianceEstimator / WaterTankEstimator ──────────────────── */}
+      {/* ── TOOLS: ApplianceEstimator / WaterTankEstimator / WhatIfSimulator ── */}
       {(meter.meterType === "electricity" && features.ai) || meter.meterType === "water" ? (
         <SectionGroup label="Tools">
           {meter.meterType === "electricity" && features.ai && (
@@ -564,26 +581,29 @@ export function Dashboard({ meters, features }: DashboardProps) {
       {/* Header */}
       <header style={{ borderBottom: "1px solid var(--border-subtle)" }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-5 py-4 sm:py-5">
-          <div>
-            <h1
-              className="font-sans font-semibold"
-              style={{
-                color: "var(--text-primary)",
-                fontSize: "14px",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-              }}
-            >
-              Utilities Tracker
-            </h1>
-            <p
-              className="font-sans mt-0.5"
-              style={{ color: "var(--text-tertiary)", fontSize: "11px" }}
-            >
-              {selectedMeter
-                ? `${isElec ? "Electricity" : "Water"} meter · ${selectedMeter.meterNo}`
-                : "Utilities Tracker"}
-            </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+            <div>
+              <h1
+                className="font-sans font-semibold"
+                style={{
+                  color: "var(--text-primary)",
+                  fontSize: "14px",
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Utilities Tracker
+              </h1>
+              <p
+                className="font-sans mt-0.5"
+                style={{ color: "var(--text-tertiary)", fontSize: "11px" }}
+              >
+                {selectedMeter
+                  ? `${isElec ? "Electricity" : "Water"} meter · ${selectedMeter.meterNo}`
+                  : "Utilities Tracker"}
+              </p>
+            </div>
+            <ScrapeStatus />
           </div>
         </div>
         {/* Thin rule below header text */}

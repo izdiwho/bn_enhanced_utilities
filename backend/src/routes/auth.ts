@@ -8,17 +8,27 @@
  */
 import { Router, Request, Response } from "express";
 import { ensureSession } from "../session.js";
+import { getLastScrapeLog } from "../cache.js";
 
 export const authRouter = Router();
 
 authRouter.get("/config", async (_req: Request, res: Response) => {
   try {
     const session = await ensureSession();
+    const lastScrapeLog = getLastScrapeLog();
+
     return res.json({
       meters: session.meters,
       features: {
         ai: Boolean(process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY),
       },
+      lastScrape: lastScrapeLog
+        ? {
+            at: lastScrapeLog.finished_at ?? lastScrapeLog.started_at,
+            status: lastScrapeLog.status,
+            trigger: lastScrapeLog.trigger,
+          }
+        : null,
     });
   } catch (err) {
     console.error("[config] Failed to get session:", (err as Error).message);

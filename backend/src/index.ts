@@ -15,8 +15,11 @@ import { authRouter } from "./routes/auth.js";
 import { usmsRouter } from "./routes/usms.js";
 import { aiRouter } from "./routes/ai.js";
 import { pinRouter, pinGuard } from "./routes/pin.js";
+import { scrapeRouter } from "./routes/scrape.js";
+import { analyticsRouter } from "./routes/analytics.js";
 import { getDb } from "./cache.js";
 import { browserScraper } from "./scraper/browser.js";
+import { startScheduler, stopScheduler } from "./scraper/scheduler.js";
 
 const PORT = parseInt(process.env.PORT ?? "4000", 10);
 
@@ -41,6 +44,8 @@ app.use("/api", pinGuard);
 
 app.use("/api", authRouter);
 app.use("/api", usmsRouter);
+app.use("/api", scrapeRouter);
+app.use("/api/analytics", analyticsRouter);
 app.use("/api/ai", aiRouter);
 
 // ─── Health check ─────────────────────────────────────────────────────────────
@@ -54,7 +59,7 @@ app.get("/health", (_req, res) => {
 // Initialise SQLite (runs schema migrations)
 getDb();
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`[backend] Listening on port ${PORT}`);
   if (!process.env.USMS_IC) {
     console.warn("[backend] WARNING: USMS_IC is not set. Set USMS_IC and USMS_PASSWORD in .env.");
@@ -64,10 +69,24 @@ app.listen(PORT, () => {
   console.log(`[backend] PIN protection: ${process.env.APP_PIN ? "enabled" : "disabled"}`);
   const hasAi = Boolean(process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY);
   console.log(`[backend] AI features: ${hasAi ? "enabled" : "disabled (set AI_API_KEY)"}`);
+
+  // Start the scraper scheduler
+  try {
+    await startScheduler();
+  } catch (err) {
+    console.error("[backend] Failed to start scheduler:", err);
+  }
 });
 
 // Graceful shutdown
 process.on("SIGTERM", async () => {
+  stopScheduler();
+  await browserScraper.cleanup();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  stopScheduler();
   await browserScraper.cleanup();
   process.exit(0);
 });
